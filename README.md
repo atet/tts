@@ -9,7 +9,7 @@ Technically, we are starting with an audio clip and continuing from that to gene
 ## Table of Contents
 
 * [0. Requirements](#0-requirements)
-* [1. Introduction](#1-introduction)
+* [1. Docker](#1-docker)
 * [2. Installation](#2-installation)
 * [3. Basic Examples](#3-basic-examples)
 * [4. Next Steps](#4-next-steps)
@@ -23,6 +23,8 @@ Technically, we are starting with an audio clip and continuing from that to gene
 ----------------------------------------------------------------------------
 
 ## 0. Requirements
+
+A bunch of requirements, but at least they're all free (except for that GPU if you don't already have one):
 
 - Free Hugging Face account at: https://huggingface.co/join
 - High-speed internet, as you'll need to download almost 25 GB of data
@@ -44,7 +46,7 @@ GPU | 🚀 1
    - [`HKUSTAudio/Llasa-3B` (~8 GB)](https://huggingface.co/HKUSTAudio/Llasa-3B)
    - [`HKUSTAudio/xcodec2` (~11 GB)](https://huggingface.co/HKUSTAudio/xcodec2)
    - [`facebook/w2v-bert-2.0` (~5 GB)](https://huggingface.co/facebook/w2v-bert-2.0)
-- Download them to your WSL home directory:
+- Download them to your WSL home directory, this may take a while ☕:
 
 ```bash
 $ mkdir -p ~/models/HKUSTAudio && cd ~/models/HKUSTAudio && \
@@ -72,9 +74,72 @@ $ mkdir -p ~/models/HKUSTAudio && cd ~/models/HKUSTAudio && \
 
 ----------------------------------------------------------------------------
 
-## 1. Introduction
+## 1. Docker
 
-INTRODUCTION.
+We will make a custom Docker image that has CUDA, Pytorch, Jupyter Labs, and required Python dependencies to run the text to speech code.
+
+### Creating Custom Image
+
+- Pull `pytorch/pytorch:2.5.1-cuda12.4-cudnn9-devel` image and create a dockerfile:
+
+```bash
+$ docker pull pytorch/pytorch:2.5.1-cuda12.4-cudnn9-devel && \
+  mkdir -p ~/docker && cd ~/docker && \
+  nano dockerfile
+```
+
+- Copy and paste this dockerfile:
+
+```dockerfile
+FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-devel
+WORKDIR /root
+
+RUN apt update
+RUN apt -y upgrade
+RUN apt -y install nano tmux htop rsync curl git
+
+RUN pip install jupyterlab ipywidgets xcodec2==0.1.3
+EXPOSE 8888
+```
+
+- Build the image, this may take a while ☕:
+
+```bash
+$ docker build -t tts_image .
+```
+
+- Create a Docker container and log into it:
+   - `--gpus all` is a required flag for NVIDIA GPU processing
+   - Must have absolute path to your home directory in WSL
+
+```bash
+$ docker run -dit --gpus all -p 8888:8888 -v <ABSOLUTE_PATH_TO_HOME>:/root/shared --name tts tts_image && \
+  docker exec -it tts /bin/bash
+```
+
+- Copy models into Docker container (for much faster loading within container):
+
+```bash
+# mkdir -p /root/models/HKUSTAudio && cd /root/models/HKUSTAudio && \
+  rsync --progress -r /root/shared/models/HKUSTAudio/Llasa-3B /root/models/HKUSTAudio/ && \
+  rsync --progress -r /root/shared/models/HKUSTAudio/xcodec2 /root/models/HKUSTAudio/ && \
+  mkdir -p /root/models/facebook && cd /root/models/facebook && \
+  rsync --progress -r /root/shared/models/facebook/w2v-bert-2.0 /root/models/facebook/
+```
+
+- **IMPORTANT**: You must change the path for `facebook/w2v-bert-2.0` to point to your local repository for this model:
+
+```bash
+# cp /opt/conda/lib/python3.11/site-packages/xcodec2/modeling_xcodec2.py /opt/conda/lib/python3.11/site-packages/xcodec2/modeling_xcodec2.py.BAK && \
+  sed -i 's/facebook\/w2v-bert-2.0/\/root\/shared\/models\/facebook\/w2v-bert-2.0/g' /opt/conda/lib/python3.11/site-packages/xcodec2/modeling_xcodec2.py
+```
+
+- Start Jupyter Lab server:
+
+```bash
+# cd /root && \
+  jupyter lab --port-retries=0 --ip 0.0.0.0 --allow-root --ServerApp.token=""
+```
 
 [Back to Top](#table-of-contents)
 
