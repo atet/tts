@@ -2,7 +2,7 @@
 
 [![.img/logo_tts.jpg](.img/logo_tts.jpg)](#nolink)
 
-Technically, we are starting with an audio clip and continuing from that to generate new audio, speech-text-to-speech, speech-to-speech? *Whatever...*
+Technically, we are starting with an audio clip and "cloning" the voice from that to generate new audio, speech-text-to-speech, speech-to-speech? *Whatever...*
 
 ----------------------------------------------------------------------------
 
@@ -10,7 +10,7 @@ Technically, we are starting with an audio clip and continuing from that to gene
 
 * [0. Requirements](#0-requirements)
 * [1. Docker](#1-docker)
-* [2. Installation](#2-installation)
+* [2. Text-to-Speech Script](#2-text-to-speech-script)
 * [3. Basic Examples](#3-basic-examples)
 * [4. Next Steps](#4-next-steps)
 
@@ -28,20 +28,20 @@ A bunch of requirements, but at least they're all free (except for that GPU if y
 
 - Free Hugging Face account at: https://huggingface.co/join
 - High-speed internet, as you'll need to download almost 25 GB of data
-- Short ~10-15 second audio clip with transcript (speech-to-text not covered here)
+- Short ~10-15 second audio clip with transcript (you'll have to do this manually as speech-to-text not covered here)
 - Windows Subsystem for Linux (WSL) with Docker (and NVIDIA Container Toolkit if using NVIDIA GPU), more info here:
    - [Installing WSL and Docker](https://github.com/atet/wsl)
    - [Installing NVIDIA Container Toolkit](https://github.com/atet/llm?tab=readme-ov-file#2-installation)
 - (Optional) An NVIDIA GPU with at least 20 GB of VRAM as CPU processing is ***much, much slower***:
 
-Mode | Execution Time (Mins.)
---- | ---
-CPU | 🐌 10
-GPU | 🚀 1
+   Mode | Execution Time (Mins.)
+   --- | ---
+   CPU | 🐌 10
+   GPU | 🚀 1
 
 ### Models From Hugging Face
 
-- You must agree to `HKUSTAudio/Llasa-3B` repository terms on Hugging Face website before you can clone it<sup>1</sup>
+- You must agree to `HKUSTAudio/Llasa-3B` repository terms on Hugging Face website before you can clone it<a href="#references"><sup>1</sup></a>
 - Three repositories being downloaded (~24 GB total):
    - [`HKUSTAudio/Llasa-3B` (~8 GB)](https://huggingface.co/HKUSTAudio/Llasa-3B)
    - [`HKUSTAudio/xcodec2` (~11 GB)](https://huggingface.co/HKUSTAudio/xcodec2)
@@ -60,15 +60,13 @@ $ mkdir -p ~/models/HKUSTAudio && cd ~/models/HKUSTAudio && \
 
 - Audio must be at 16 kHz sample rate, mono (not stereo), `*.wav` format
    - Free audio conversion with Audacity program: https://portableapps.com/apps/music_video/audacity_portable
-   - Audio used for input should be around 15 seconds and expected output to be about 15 seconds of speech
-   - Entire prompt + newly-generated audio can only be about 35 seconds long with this model:
-      - Longer prompt audio (15-20 seconds) allows for better voice mimicking but shorter generated audio (15-10 seconds)
-      - Shorter prompt audio (~10 seconds) allows longer generated audio (~25 seconds) but worse voice mimicking
-- Example input audio files:
-   - Public domain (CC0) voice clip from: https://opengameart.org/content/airport-announcement-voice-acting-stk
-      - This file is located in this repository: `./.dat/voice.wav`
-   - Machine-generated voice example from [www.morgbob.com](https://www.morgbob.com) ([Microsoft Text-to-Speech](https://learn.microsoft.com/en-us/answers/questions/1192398/can-i-use-azure-text-to-speech-for-commercial-usag#:~:text=%40Newstart%20Yes%2C%20you%20can%20use,mentioned%20in%20the%20pricing%20page.))
-      - This file is located in this repository: `./.dat/morgbob.wav`
+- Audio used for input should be around 15 seconds and expected output to be maximum of about 15 seconds of speech:
+   - Entire prompt + newly-generated audio can **only be about 35 seconds long** with this model
+   - Longer prompt audio (15-20 seconds) allows for better voice mimicking but shorter generated audio (15-10 seconds)
+   - Shorter prompt audio (~10 seconds) allows longer generated audio (~25 seconds) but worse voice mimicking
+- Example audio files to use for input:
+   - Machine-generated voice example from www.morgbob.com<a href="#references"><sup>2</sup></a>: [`./.dat/morgbob.wav`](https://github.com/atet/tts/blob/main/.dat/morgbob.wav)
+   - Public domain (CC0) voice clip<a href="#references"><sup>3</sup></a>: [`./.dat/voice.wav`](https://github.com/atet/tts/blob/main/.dat/voice.wav)
 
 [Back to Top](#table-of-contents)
 
@@ -76,7 +74,7 @@ $ mkdir -p ~/models/HKUSTAudio && cd ~/models/HKUSTAudio && \
 
 ## 1. Docker
 
-We will make a custom Docker image that has CUDA, Pytorch, Jupyter Labs, and required Python dependencies to run the text to speech code.
+We will make a custom Docker image that has CUDA, Pytorch, Jupyter Labs, and required Python dependencies to run the text-to-speech code. Docker images keep cleanup simple as nothing (other than Docker) is installed on your system.
 
 ### Creating Custom Image
 
@@ -110,14 +108,14 @@ $ docker build -t tts_image .
 
 - Create a Docker container and log into it:
    - `--gpus all` is a required flag for NVIDIA GPU processing
-   - Must have absolute path to your home directory in WSL
+   - Must **change placeholder below to the absolute path** of your home directory in WSL
 
 ```bash
 $ docker run -dit --gpus all -p 8888:8888 -v <ABSOLUTE_PATH_TO_HOME>:/root/shared --name tts tts_image && \
   docker exec -it tts /bin/bash
 ```
 
-- Copy models into Docker container (for much faster loading within container):
+- Copy models into your Docker container (for much faster loading within container):
 
 ```bash
 # mkdir -p /root/models/HKUSTAudio && cd /root/models/HKUSTAudio && \
@@ -127,14 +125,14 @@ $ docker run -dit --gpus all -p 8888:8888 -v <ABSOLUTE_PATH_TO_HOME>:/root/share
   rsync --progress -r /root/shared/models/facebook/w2v-bert-2.0 /root/models/facebook/
 ```
 
-- **IMPORTANT**: You must change the path for `facebook/w2v-bert-2.0` to point to your local repository for this model:
+- **IMPORTANT**: You must change the path for `facebook/w2v-bert-2.0` in the `xcodec2` Python library to point to your local repository for this model:
 
 ```bash
 # cp /opt/conda/lib/python3.11/site-packages/xcodec2/modeling_xcodec2.py /opt/conda/lib/python3.11/site-packages/xcodec2/modeling_xcodec2.py.BAK && \
   sed -i 's/facebook\/w2v-bert-2.0/\/root\/shared\/models\/facebook\/w2v-bert-2.0/g' /opt/conda/lib/python3.11/site-packages/xcodec2/modeling_xcodec2.py
 ```
 
-- Start Jupyter Lab server:
+- Start Jupyter Lab server to create and run text-to-speech script:
 
 ```bash
 # cd /root && \
@@ -145,9 +143,153 @@ $ docker run -dit --gpus all -p 8888:8888 -v <ABSOLUTE_PATH_TO_HOME>:/root/share
 
 ----------------------------------------------------------------------------
 
-## 2. Installation
+## 2. Text-to-Speech Script
 
-INSTALLATION.
+Jupyter Labs will now be accessible from your web browser at `localhost:8888`. Use a Jupyter notebook instead of running a Python script from command line, as the command line method must load and unload these large models every execution, taking additional time between subsequent TTS runs.
+
+- Start a new Jupyter notebook and ensure you **separate the code below<a href="#references"><sup>4</sup></a> into two cells**, running cell 1 only once
+
+### Cell 1
+
+- **Run this cell only once per session!**
+- Select GPU (line 9) or CPU (line 10) proessing
+
+```python
+# WARNING: Run this cell only once per session!
+from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch
+import soundfile as sf
+from xcodec2.modeling_xcodec2 import XCodec2Model
+import time
+
+# Pick either GPU or CPU processing (comment out the other option)
+MODE = "cuda"  # Using GPU/VRAM
+# MODE = "cpu" # Using CPU/RAM
+
+dir_llasa_3b = "/root/models/HKUSTAudio/Llasa-3B" # Path to local Llasa-3B repos
+tokenizer = AutoTokenizer.from_pretrained(dir_llasa_3b)
+model = AutoModelForCausalLM.from_pretrained(dir_llasa_3b)
+model.eval() 
+model.to(MODE)
+# If you did not edit modeling_xcodec2.py with local path, this will (re)download w2v-bert-2.0 from Hugging Face
+dir_xcodec2 = "/root/models/HKUSTAudio/xcodec2" # Path to local xcodec2 repos
+Codec_model = XCodec2Model.from_pretrained(dir_xcodec2)
+Codec_model.eval().to(MODE)
+
+# Functions
+def ids_to_speech_tokens(speech_ids):
+    speech_tokens_str = []
+    for speech_id in speech_ids:
+        speech_tokens_str.append(f"<|s_{speech_id}|>")
+    return speech_tokens_str
+
+def extract_speech_ids(speech_tokens_str):
+    speech_ids = []
+    for token_str in speech_tokens_str:
+        if token_str.startswith('<|s_') and token_str.endswith('|>'):
+            num_str = token_str[4:-2]
+            num = int(num_str)
+            speech_ids.append(num)
+        else:
+            print(f"Unexpected token: {token_str}")
+    return speech_ids
+
+def tts():
+    prompt_wav, sr = sf.read(filepath_prompt)
+    prompt_wav = torch.from_numpy(prompt_wav).float().unsqueeze(0)
+    input_text = prompt_text + target_text
+    with torch.no_grad():
+        start_time = time.time()
+        print("Starting Text-to-Speech...")
+        # Encode the prompt wav
+        vq_code_prompt = Codec_model.encode_code(input_waveform=prompt_wav)
+        #print("Prompt Vq Code Shape:", vq_code_prompt.shape)
+        vq_code_prompt = vq_code_prompt[0,0,:]
+        
+        # Convert int 12345 to token <|s_12345|>
+        speech_ids_prefix = ids_to_speech_tokens(vq_code_prompt)
+        formatted_text = f"<|TEXT_UNDERSTANDING_START|>{input_text}<|TEXT_UNDERSTANDING_END|>"
+    
+        # Tokenize the text and the speech prefix
+        chat = [
+            {"role": "user", "content": "Convert the text to speech:" + formatted_text},
+            {"role": "assistant", "content": "<|SPEECH_GENERATION_START|>" + ''.join(speech_ids_prefix)}
+        ]
+        input_ids = tokenizer.apply_chat_template(
+            chat,
+            tokenize               = True,
+            return_tensors         = "pt",
+            continue_final_message = True
+        )
+        input_ids = input_ids.to(MODE)
+        speech_end_id = tokenizer.convert_tokens_to_ids('<|SPEECH_GENERATION_END|>')
+    
+        # Generate the speech autoregressively
+        outputs = model.generate(
+            input_ids,
+            max_length   = 2048,  # We trained our model with a max length of 2048
+            eos_token_id = speech_end_id,
+            do_sample    = True,
+            top_p        = 1,
+            temperature  = 0.8,
+        )
+        # Extract the speech tokens
+        generated_ids = outputs[0][input_ids.shape[1]-len(speech_ids_prefix):-1]
+        speech_tokens = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
+    
+        # Convert  token <|s_23456|> to int 23456
+        speech_tokens = extract_speech_ids(speech_tokens)
+        speech_tokens = torch.tensor(speech_tokens).to(MODE).unsqueeze(0).unsqueeze(0)
+    
+        # Decode the speech tokens to speech waveform
+        gen_wav_full = Codec_model.decode_code(speech_tokens)
+        gen_wav_new = gen_wav_full[:,:,prompt_wav.shape[1]:]
+        
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        
+        print("DONE! Elapsed time:", int(round(elapsed_time, 0)), "seconds.")
+        sf.write(filepath_save_full, gen_wav_full[0, 0, :].cpu().numpy(), 16000)
+        print("- Full audio file written to:", filepath_save_full)
+        sf.write(filepath_save_new, gen_wav_new[0, 0, :].cpu().numpy(), 16000)
+        print("- Newly-generated audio file written to:", filepath_save_new)
+```
+
+### Cell 2
+
+- This code will generate new speech from your example voice clip, change placeholder below to path of `morgbob.wav`; output will be saved to your WSL home directory
+- You change parameters here like input filepaths and re-run this cell multiple times without having to reload models
+
+```python
+# Prompt audio file, must be 16 kHz, mono, *.wav format
+filepath_prompt    = "<PATH_TO_morgbob.wav>"
+# Appends newly-generated audio to prompt audio, allowing you to hear the original prompt audio transition to the newly-generated audio
+filepath_save_full = "/root/shared/morgbob_generated_full.wav"
+# Only the newly-generated audio
+filepath_save_new  = "/root/shared/morgbob_generated_new.wav"
+
+# You must provide the transcript of the prompt audio clip
+prompt_text = "I am Morgbob. I am no stranger to a strange creature."
+# This is the newly-generated, never-before-heard speech you want generated by the model
+target_text = "I don't know who you are, I don't know what you want, if you are looking for ransom, I can tell you I don't have money. But what I do have are a very particular set of skills. Skills I have acquired over a very long career, skills that make me a nightmare for people like you."
+
+# Run TTS function
+tts()
+```
+
+### Results
+
+- Input (`./.dat/morgbob.wav`)
+
+https://github.com/user-attachments/assets/6a84f020-fe4a-4e18-85bf-5a713f8e4c15
+
+- Input + newly-generated audio (`./.dat/morgbob_generated_full.wav`)
+
+https://github.com/user-attachments/assets/3c8eba7b-b452-452b-a66f-44ed9454523c
+
+- Newly-generated audio only (`./.dat/morgbob_generated_new.wav`)
+
+https://github.com/user-attachments/assets/8270ca86-c773-4f8d-9b30-bcac568333a4
 
 [Back to Top](#table-of-contents)
 
@@ -195,6 +337,12 @@ Issue | Solution
    - **Attribution** — You must give appropriate credit, provide a link to the license, and indicate if changes were made. You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use.
    - **Non Commercial** — You may not use the material for commercial purposes.
    - **No Derivatives** — If you remix, transform, or build upon the material, you may not distribute the modified material.
+2. Generated speech from [www.morgbob.com](https://www.morgbob.com) made with [Microsoft text-to-speech and can be used for commercial purposes](https://learn.microsoft.com/en-us/answers/questions/1192398/can-i-use-azure-text-to-speech-for-commercial-usag#:~:text=%40Newstart%20Yes%2C%20you%20can%20use,mentioned%20in%20the%20pricing%20page.)
+3. [Public domain (CC0)](https://www.tldrlegal.com/license/creative-commons-cc0-1-0-universal) voice clip from [eugeneloza](https://opengameart.org/content/airport-announcement-voice-acting-stk)
+   - **No Rights Reserved** — CC0 is a "no rights reserved" option that allows creators to give up their copyright and related rights.
+   - **Public domain** — CC0 places the work in the public domain, so others can use it without restriction.
+   - **Irrevocable** — CC0 is irrevocable, meaning once it's applied, it can't be changed.
+4. Text-to-speech code adapted from [`HKUSTAudio/Llasa-3B` "Speech synthesis utilizing a given speech prompt" script](https://huggingface.co/HKUSTAudio/Llasa-3B#how-to-use)
 
 [Back to Top](#table-of-contents)
 
