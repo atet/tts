@@ -297,17 +297,13 @@ https://github.com/user-attachments/assets/15635793-1e51-4df6-bdeb-f06cd8ff7aae
 
 ----------------------------------------------------------------------------
 
-## 3. Basic Examples
+## 3. Next Steps
 
-BASIC EXAMPLES.
+Congratulations for getting through this tutorial, hopefully you're more confident about deploying advanced artificial intelligence models on your own now.
 
-[Back to Top](#table-of-contents)
-
-----------------------------------------------------------------------------
-
-## 4. Next Steps
-
-NEXT STEPS.
+Sky is the limit for next steps:
+- Create a Python Streamlit application to give this process a nice graphical user interface
+- Experiment with other modalities like [text generation (e.g., ChatGPT-like chatbot)](https://huggingface.co/models?pipeline_tag=text-generation&sort=trending), [text-to-image](https://huggingface.co/models?pipeline_tag=text-to-image&sort=trending), [image-to-text](https://huggingface.co/models?pipeline_tag=image-to-text&sort=trending), [image-text-to-text](https://huggingface.co/models?pipeline_tag=image-text-to-text&sort=trending)...
 
 [Back to Top](#table-of-contents)
 
