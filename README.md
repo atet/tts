@@ -279,15 +279,17 @@ tts()
 
 ### Results
 
-- Input ([`./.dat/morgbob.wav`]())
+So easy! Check out the results below (NOTE: Audio player on mute by default):
+
+- Input ([`./.dat/morgbob.wav`](https://github.com/atet/tts/blob/main/.dat/morgbob.wav))
 
 https://github.com/user-attachments/assets/b43a2c7c-df9c-4b7f-823b-997af61a5bae
 
-- Input + newly-generated audio ([`./.dat/morgbob_generated_full.wav`]())
+- Input + newly-generated audio ([`./.dat/morgbob_generated_full.wav`](https://github.com/atet/tts/blob/main/.dat/morgbob_generated_full.wav))
 
 https://github.com/user-attachments/assets/b0a7e400-604c-4ec3-9c4e-75421d5cb7eb
 
-- Newly-generated audio only ([`./.dat/morgbob_generated_new.wav`]())
+- Newly-generated audio only ([`./.dat/morgbob_generated_new.wav`](https://github.com/atet/tts/blob/main/.dat/morgbob_generated_new.wav))
 
 https://github.com/user-attachments/assets/15635793-1e51-4df6-bdeb-f06cd8ff7aae
 
