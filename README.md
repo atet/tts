@@ -2,7 +2,7 @@
 
 [![.img/logo_tts.jpg](.img/logo_tts.jpg)](#nolink)
 
-SUBTITLE.
+Technically, we are starting with an audio clip and continuing from that to generate new audio, speech-text-to-speech, speech-to-speech? *Whatever...*
 
 ----------------------------------------------------------------------------
 
@@ -18,12 +18,55 @@ SUBTITLE.
 
 * [Other Resources](#other-resources)
 * [Troubleshooting](#troubleshooting)
+* [References](#references)
 
 ----------------------------------------------------------------------------
 
 ## 0. Requirements
 
-REQUIREMENTS.
+- Free Hugging Face account at: https://huggingface.co/join
+- High-speed internet, as you'll need to download almost 25 GB of data
+- Short ~10-15 second audio clip with transcript (speech-to-text not covered here)
+- Windows Subsystem for Linux (WSL) with Docker (and NVIDIA Container Toolkit if using NVIDIA GPU), more info here:
+   - [Installing WSL and Docker](https://github.com/atet/wsl)
+   - [Installing NVIDIA Container Toolkit](https://github.com/atet/llm?tab=readme-ov-file#2-installation)
+- (Optional) An NVIDIA GPU with at least 20 GB of VRAM as CPU processing is ***much, much slower***:
+
+Mode | Execution Time (Mins.)
+--- | ---
+CPU | 🐌 10
+GPU | 🚀 1
+
+### Models From Hugging Face
+
+- You must agree to `HKUSTAudio/Llasa-3B` repository terms on Hugging Face website before you can clone it<sup>1</sup>
+- Three repositories being downloaded (~24 GB total):
+   - [`HKUSTAudio/Llasa-3B` (~8 GB)](https://huggingface.co/HKUSTAudio/Llasa-3B)
+   - [`HKUSTAudio/xcodec2` (~11 GB)](https://huggingface.co/HKUSTAudio/xcodec2)
+   - [`facebook/w2v-bert-2.0` (~5 GB)](https://huggingface.co/facebook/w2v-bert-2.0)
+- Download them to your WSL home directory:
+
+```bash
+$ mkdir -p ~/models/HKUSTAudio && cd ~/models/HKUSTAudio && \
+  git lfs clone git@hf.co:HKUSTAudio/Llasa-3B && \
+  git lfs clone git@hf.co:HKUSTAudio/xcodec2 && \
+  mkdir -p ~/models/facebook && cd ~/models/facebook && \
+  git lfs clone git@hf.co:facebook/w2v-bert-2.0
+```
+
+### Input Audio
+
+- Audio must be at 16 kHz sample rate, mono (not stereo), `*.wav` format
+   - Free audio conversion with Audacity program: https://portableapps.com/apps/music_video/audacity_portable
+   - Audio used for input should be around 15 seconds and expected output to be about 15 seconds of speech
+   - Entire prompt + newly-generated audio can only be about 35 seconds long with this model:
+      - Longer prompt audio (15-20 seconds) allows for better voice mimicking but shorter generated audio (15-10 seconds)
+      - Shorter prompt audio (~10 seconds) allows longer generated audio (~25 seconds) but worse voice mimicking
+- Example input audio files:
+   - Public domain (CC0) voice clip from: https://opengameart.org/content/airport-announcement-voice-acting-stk
+      - This file is located in this repository: `./.dat/voice.wav`
+   - Machine-generated voice example from [www.morgbob.com](https://www.morgbob.com) ([Microsoft Text-to-Speech](https://learn.microsoft.com/en-us/answers/questions/1192398/can-i-use-azure-text-to-speech-for-commercial-usag#:~:text=%40Newstart%20Yes%2C%20you%20can%20use,mentioned%20in%20the%20pricing%20page.))
+      - This file is located in this repository: `./.dat/morgbob.wav`
 
 [Back to Top](#table-of-contents)
 
@@ -76,6 +119,17 @@ null | null
 Issue | Solution
 --- | ---
 **"It's not working!"** | This concise tutorial has distilled hours of sweat, tears, and troubleshooting; _it can't not work_
+
+[Back to Top](#table-of-contents)
+
+----------------------------------------------------------------------------
+
+## References
+
+1. Llasa 3B is licensed under [Creative Commons Attribution Non Commercial No Derivatives 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/deed.en):
+   - **Attribution** — You must give appropriate credit, provide a link to the license, and indicate if changes were made. You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use.
+   - **Non Commercial** — You may not use the material for commercial purposes.
+   - **No Derivatives** — If you remix, transform, or build upon the material, you may not distribute the modified material.
 
 [Back to Top](#table-of-contents)
 
