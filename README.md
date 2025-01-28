@@ -4,6 +4,8 @@
 
 Technically, we are starting with an audio clip and "cloning" the voice from that to generate new audio, speech-text-to-speech, speech-to-speech? *Whatever...*
 
+**UPDATE**: I dove into all of this because of a funny [Game Jam 2025 idea](https://www.higherthanmars.com/) that ended up being a big part of the development, so check out our game that leveraged test-to-speech for some hilarious results!
+
 ----------------------------------------------------------------------------
 
 ## Table of Contents
@@ -11,8 +13,7 @@ Technically, we are starting with an audio clip and "cloning" the voice from tha
 * [0. Requirements](#0-requirements)
 * [1. Docker](#1-docker)
 * [2. Text-to-Speech Script](#2-text-to-speech-script)
-* [3. Basic Examples](#3-basic-examples)
-* [4. Next Steps](#4-next-steps)
+* [3. Next Steps](#3-next-steps)
 
 ### Supplemental
 
@@ -313,7 +314,7 @@ Sky is the limit for next steps:
 
 **Description** | **URL Link**
 --- | ---
-null | null
+Hugging Face | https://huggingface.co
 
 [Back to Top](#table-of-contents)
 
