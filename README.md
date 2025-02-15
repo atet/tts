@@ -30,6 +30,7 @@ A bunch of requirements, but at least they're all free (except for that GPU if y
 - Free Hugging Face account at: https://huggingface.co/join
   - Register your SSH public key with your Hugging Face account: https://huggingface.co/docs/hub/en/security-git-ssh#add-a-ssh-key-to-your-account
   - Test your SSH access and ensure your username is returned and not "`Hi anonymous...`" by executing: `$ ssh -T git@hf.co`
+  - Some repositories require you to accept their terms and conditions on the Hugging Face website before you can download them through SSH
 - High-speed internet, as you'll need to download almost 25 GB of data
 - Short ~10-15 second audio clip with transcript (you'll have to do this manually as speech-to-text not covered here)
 - Windows Subsystem for Linux (WSL) with Docker (and NVIDIA Container Toolkit if using NVIDIA GPU), more info here:
