@@ -28,6 +28,8 @@ Technically, we are starting with an audio clip and "cloning" the voice from tha
 A bunch of requirements, but at least they're all free (except for that GPU if you don't already have one):
 
 - Free Hugging Face account at: https://huggingface.co/join
+  - Register your SSH public key with your Hugging Face account: https://huggingface.co/docs/hub/en/security-git-ssh#add-a-ssh-key-to-your-account
+  - Test your SSH access and ensure your username is returned and not "`Hi anonymous...`" by executing: `$ ssh -T git@hf.co`
 - High-speed internet, as you'll need to download almost 25 GB of data
 - Short ~10-15 second audio clip with transcript (you'll have to do this manually as speech-to-text not covered here)
 - Windows Subsystem for Linux (WSL) with Docker (and NVIDIA Container Toolkit if using NVIDIA GPU), more info here:
@@ -37,12 +39,12 @@ A bunch of requirements, but at least they're all free (except for that GPU if y
 
    Mode | Execution Time (Mins.)
    --- | ---
-   CPU | 🐌 10
-   GPU | 🚀 1
+   CPU+RAM | 🐌 10
+   GPU+VRAM | 🚀 1
 
 ### Models From Hugging Face
 
-- You must agree to `HKUSTAudio/Llasa-3B` repository terms on Hugging Face website before you can clone it<a href="#references"><sup>1</sup></a>
+- You must agree to `HKUSTAudio/Llasa-3B` repository terms on the Hugging Face website before you can clone it<a href="#references"><sup>1</sup></a>
 - Three repositories being downloaded (~24 GB total):
    - [`HKUSTAudio/Llasa-3B` (~8 GB)](https://huggingface.co/HKUSTAudio/Llasa-3B)
    - [`HKUSTAudio/xcodec2` (~11 GB)](https://huggingface.co/HKUSTAudio/xcodec2)
@@ -146,9 +148,9 @@ $ docker run -dit --gpus all -p 8888:8888 -v <ABSOLUTE_PATH_TO_HOME>:/root/share
 
 ## 2. Text-to-Speech Script
 
-Jupyter Labs will now be accessible from your web browser at `localhost:8888`. Use a Jupyter notebook instead of running a Python script from command line, as the command line method must load and unload these large models every execution, taking additional time between subsequent TTS runs.
+Jupyter Labs will now be accessible from your web browser at `localhost:8888`. Use a Jupyter notebook instead of running a Python script from command line, as the command line method must load and unload these large models files every script execution, taking unnecessary time between subsequent TTS runs.
 
-- Start a new Jupyter notebook and ensure you **separate the code below<a href="#references"><sup>4</sup></a> into two cells**, running cell 1 only once
+- Start a new Jupyter notebook and ensure you **separate the code below<a href="#references"><sup>4</sup></a> into two cells**, running cell 1 only once and using cell 2 to create audio clips
 
 ### Cell 1
 
@@ -164,15 +166,16 @@ from xcodec2.modeling_xcodec2 import XCodec2Model
 import time
 
 # Pick either GPU or CPU processing (comment out the other option)
-MODE = "cuda"  # Using GPU/VRAM
-# MODE = "cpu" # Using CPU/RAM
+MODE = "cuda"  # Using GPU+VRAM
+# MODE = "cpu" # Using CPU+RAM
 
 dir_llasa_3b = "/root/models/HKUSTAudio/Llasa-3B" # Path to local Llasa-3B repos
 tokenizer = AutoTokenizer.from_pretrained(dir_llasa_3b)
 model = AutoModelForCausalLM.from_pretrained(dir_llasa_3b)
 model.eval() 
 model.to(MODE)
-# If you did not edit modeling_xcodec2.py with local path, this will (re)download w2v-bert-2.0 from Hugging Face
+
+# If you did not edit modeling_xcodec2.py with the local path of w2v-bert-2.0 in the above instructions, it will be downloaded from Hugging Face again
 dir_xcodec2 = "/root/models/HKUSTAudio/xcodec2" # Path to local xcodec2 repos
 Codec_model = XCodec2Model.from_pretrained(dir_xcodec2)
 Codec_model.eval().to(MODE)
@@ -202,6 +205,7 @@ def tts():
     with torch.no_grad():
         start_time = time.time()
         print("Starting Text-to-Speech...")
+
         # Encode the prompt wav
         vq_code_prompt = Codec_model.encode_code(input_waveform=prompt_wav)
         #print("Prompt Vq Code Shape:", vq_code_prompt.shape)
@@ -228,12 +232,13 @@ def tts():
         # Generate the speech autoregressively
         outputs = model.generate(
             input_ids,
-            max_length   = 2048,  # We trained our model with a max length of 2048
+            max_length   = 2048,  # This model is trained with a max length of 2048, do not use a different number
             eos_token_id = speech_end_id,
             do_sample    = True,
             top_p        = 1,
             temperature  = 0.8,
         )
+
         # Extract the speech tokens
         generated_ids = outputs[0][input_ids.shape[1]-len(speech_ids_prefix):-1]
         speech_tokens = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
@@ -280,7 +285,7 @@ tts()
 
 ### Results
 
-So easy! Check out the results below (NOTE: Audio player on mute by default):
+So easy! Check out the results below (NOTE: Browser audio player on mute by default):
 
 - Input ([`./.dat/morgbob.wav`](https://github.com/atet/tts/blob/main/.dat/morgbob.wav))
 
@@ -324,6 +329,7 @@ Hugging Face | https://huggingface.co
 
 Issue | Solution
 --- | ---
+**"The audio output is really weird!"** | `¯\_(ツ)_/¯` Sometimes it be like that, just try processing it again (it should use a different [seed](https://csrc.nist.gov/glossary/term/seed#:~:text=The%20input%20to%20a%20pseudorandom%20number%20generator.%20Different%20seeds%20generate%20different%20pseudorandom%20sequences.) next time)
 **"It's not working!"** | This concise tutorial has distilled hours of sweat, tears, and troubleshooting; _it can't not work_
 
 [Back to Top](#table-of-contents)
