@@ -149,7 +149,7 @@ $ docker run -dit --gpus all -p 8888:8888 -v <ABSOLUTE_PATH_TO_HOME>:/root/share
 
 ```bash
 # cd /root && \
-  jupyter lab --port-retries=0 --ip 0.0.0.0 --allow-root --ServerApp.token=""
+  jupyter lab
 ```
 
 JupyterLab will now be accessible from your web browser at `localhost:8888`:
