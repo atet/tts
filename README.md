@@ -4,7 +4,7 @@
 
 Technically, we are starting with an audio clip and "cloning" the voice from that to generate new audio, speech-text-to-speech, speech-to-speech? *Whatever...*
 
-**UPDATE**: I dove into all of this because of a funny [Game Jam 2025 idea](https://www.higherthanmars.com/) that ended up being a big part of the development, so check out our game that leveraged test-to-speech for some hilarious results!
+**UPDATE**: I dove into all of this because of a funny [Game Jam 2025 idea](https://www.higherthanmars.com/) that ended up being a big part of the development, so check out our game that leveraged text-to-speech for some hilarious results!
 
 ----------------------------------------------------------------------------
 
@@ -78,7 +78,7 @@ $ mkdir -p ~/models/HKUSTAudio && cd ~/models/HKUSTAudio && \
 
 ## 1. Docker
 
-We will make a custom Docker image that has CUDA, Pytorch, Jupyter Labs, and required Python dependencies to run the text-to-speech code. Docker images keep cleanup simple as nothing (other than Docker) is installed on your system.
+We will make a custom Docker image that has CUDA, Pytorch, JupyterLab, and required Python dependencies to run the text-to-speech code. Docker images keep cleanup simple as nothing (other than Docker) is installed on your system.
 
 ### Creating Custom Image
 
@@ -99,8 +99,17 @@ WORKDIR /root
 RUN apt update
 RUN apt -y upgrade
 RUN apt -y install nano tmux htop rsync curl git
-
 RUN pip install jupyterlab ipywidgets xcodec2==0.1.3
+
+RUN touch /root/.jupyter/jupyter_lab_config.py
+RUN echo "c = get_config() \n\
+c.IdentityProvider.token = '' \n\
+c.ServerApp.ip = '0.0.0.0' \n\
+c.ServerApp.port = 8888 \n\
+c.ServerApp.quit_button = False \n\
+c.ServerApp.open_browser = False \n\
+c.ServerApp.allow_root = True" >> /root/.jupyter/jupyter_lab_config.py
+
 EXPOSE 8888
 ```
 
@@ -136,12 +145,16 @@ $ docker run -dit --gpus all -p 8888:8888 -v <ABSOLUTE_PATH_TO_HOME>:/root/share
   sed -i 's/facebook\/w2v-bert-2.0/\/root\/shared\/models\/facebook\/w2v-bert-2.0/g' /opt/conda/lib/python3.11/site-packages/xcodec2/modeling_xcodec2.py
 ```
 
-- Start Jupyter Lab server to create and run text-to-speech script:
+- Start JupyterLab server to create and run text-to-speech script:
 
 ```bash
 # cd /root && \
   jupyter lab --port-retries=0 --ip 0.0.0.0 --allow-root --ServerApp.token=""
 ```
+
+JupyterLab will now be accessible from your web browser at `localhost:8888`:
+
+![.img/fig_jupyterlab.jpg](.img/fig_jupyterlab.jpg)
 
 [Back to Top](#table-of-contents)
 
@@ -149,9 +162,11 @@ $ docker run -dit --gpus all -p 8888:8888 -v <ABSOLUTE_PATH_TO_HOME>:/root/share
 
 ## 2. Text-to-Speech Script
 
-Jupyter Labs will now be accessible from your web browser at `localhost:8888`. Use a Jupyter notebook instead of running a Python script from command line, as the command line method must load and unload these large models files every script execution, taking unnecessary time between subsequent TTS runs.
+JupyterLab will now be accessible from your web browser at `localhost:8888`. Use a Jupyter Notebook (outlined in red above) instead of running a Python script from command line, as the command line method must load and unload these large models files every script execution, taking unnecessary time between subsequent TTS runs.
 
-- Start a new Jupyter notebook and ensure you **separate the code below<a href="#references"><sup>4</sup></a> into two cells**, running cell 1 only once and using cell 2 to create audio clips
+Start a new Jupyter Notebook and ensure you **separate the code below<a href="#references"><sup>4</sup></a> into two cells** (click *Insert Cell* button outlined in red below), running cell 1 only once and using cell 2 to create audio clips:
+
+![.img/fig_new_cell.jpg](.img/fig_new_cell.jpg)
 
 ### Cell 1
 
@@ -264,8 +279,8 @@ def tts():
 
 ### Cell 2
 
-- This code will generate new speech from your example voice clip, change placeholder below to path of `morgbob.wav`; output will be saved to your WSL home directory
-- You change parameters here like input filepaths and re-run this cell multiple times without having to reload models
+- This code will generate new speech from your example voice clip, change placeholder below to your path of `morgbob.wav`; output will be saved to your WSL home directory
+- You change parameters here like input filepaths, save filepaths, and transcripts, then you can re-run this cell multiple times without having to waste time reloading models from cell 1
 
 ```python
 # Prompt audio file, must be 16 kHz, mono, *.wav format
